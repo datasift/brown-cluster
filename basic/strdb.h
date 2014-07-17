@@ -5,43 +5,71 @@
 #include "stl-basic.h"
 #include "stl-utils.h"
 #include "logging.h"
-
+/*
 void destroy_strings(StrVec &vec);
 void destroy_strings(StrStrMap &map);
-
+*/
 // Map between strings and integers.
 // Strings must not have spaces in them.
 // File format: strings, one per line.  Assume strings are distinct.
+
+/*
+ * ? should the index be unsigned ?
+ * ? is lookup needed ?
+ *
+ *
+ */
 struct StrDB {
-  StrDB() { }
-  ~StrDB() { destroy_strings(); }
+
 
   int read(istream &in, int n, bool one_way);
-  int read(const char *file, bool one_way);
+  int read(const std::string &file, bool one_way);
 
-  void write(ostream &out);
-  void write(const char *file);
+  void write(ostream &out) const;
+  void write(const std::string &file) const;
 
-  int size() const   { return len(i2s); }
-  void clear()       { destroy_strings(); i2s.clear(); s2i.clear(); }
+  int size() const   { return i2s.size(); }
+  void clear()       { i2s.clear(); s2i.clear(); }
+
+  void destroy_s2i() { s2i.clear(); }
+
+
+  std::string operator[](int i) const;
+  int operator[](const std::string &s) const;
+  int operator[](const std::string &s);
+  int lookup(const std::string &s, bool incorp_new, int default_i);
+
+  IntVec lookup(const StringVec &svec);
+
+  bool exists(const std::string &s) const { return s2i.find(s) != s2i.end(); }
+
+  StringVec i2s;
+  StringIntMap s2i;
+
+  int insert_if_new(std::string &&s);
+  int insert_if_new(const std::string &s);
+  /*
+   * \brief if found, return index, otherwise return -1
+
+   */
+  int lookup(const std::string &s);
+
+
+/*
+  StrDB() { }
+
+  ~StrDB() { destroy_strings(); }
   void destroy()     { destroy_strings(); ::destroy(i2s); ::destroy(s2i); }
   void destroy_s2i() { ::destroy(s2i); }
   void clear_keep_strings() { i2s.clear(); s2i.clear(); }
-
-  const char *operator[](int i) const;
-  int operator[](const char *s) const;
-  int operator[](const char *s);
-  int lookup(const char *s, bool incorp_new, int default_i);
-
-  IntVec lookup(const StrVec &svec);
-
-  bool exists(const char *s) const { return s2i.find(s) != s2i.end(); }
+  int read(const char *file, bool one_way);
 
   // /usr/bin/top might not show the memory reduced.
   void destroy_strings() { ::destroy_strings(i2s); }
+ */
 
-  StrVec i2s;
-  StrIntMap s2i;
+
+
 };
 
 ostream &operator<<(ostream &out, const StrDB &db);

@@ -17,7 +17,7 @@ typedef vector<IntPair> IntPairVec;
 typedef vector<DoubleInt> DoubleIntVec;
 typedef vector<bool> BoolVec;
 typedef vector<int> IntVec;
-typedef vector<string> StringVec;
+typedef vector<std::string> StringVec;
 typedef vector<IntVec> IntMat;
 typedef vector<IntVec> IntVecVec;
 typedef vector<IntVecVec> IntVecVecVec;
@@ -108,6 +108,9 @@ typedef vector<IntIntMap> IntIntMapVec;
 
 typedef vector<const char *> StrVec;
 typedef unordered_map<const char *, int, str_hf, str_eq> StrIntMap;
+typedef unordered_map<std::string, int, string_hf> StringIntMap;
 typedef unordered_map<const char *, const char *, str_hf, str_eq> StrStrMap;
+typedef unordered_map<std::string, std::string, str_hf, str_eq> StringStringMap;
+
 
 #endif

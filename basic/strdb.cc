@@ -1,60 +1,113 @@
 #include "strdb.h"
 #include "str.h"
 
-void destroy_strings(StrVec &vec) {
+int StrDB::read(const string &file, bool one_way) {
+  track("StrDB::read()", file << ", one_way=" << one_way, true);
+  std::ifstream in(file);
+  assert(in);
+  return read(in, INT_MAX, one_way);
+}
+
+void StrDB::write(const std::string &file) const {
+  track("StrDB::write()", file, true);
+  std::ofstream out(file);
+  write(out);
+}
+
+int StrDB::insert_if_new(std::string &&s){
+
+	StringIntMap::const_iterator it = s2i.find(s);
+	if(it != s2i.end()) return it->second;
+
+	int i = s2i[s] = i2s.size();
+	i2s.push_back(std::move(s));
+	return i;
+}
+
+int StrDB::insert_if_new(const std::string &s){
+
+	StringIntMap::const_iterator it = s2i.find(s);
+	if(it != s2i.end()) return it->second;
+
+	int i = s2i[s] = i2s.size();
+	i2s.push_back(s);
+	return i;
+}
+
+std::string StrDB::operator[](int i) const {
+  assert(i >= 0 && i < i2s.size());
+  return i2s[i];
+}
+
+int StrDB::read(istream &in, int N, bool one_way) {
+  std::string s;
+  clear();
+  while(size() < N && in >> s) {
+    if(one_way) i2s.push_back(std::move(s));
+    else insert_if_new(std::move(s));
+  }
+  logs(size() << " strings read");
+  return size();
+}
+
+void StrDB::write(ostream &out) const {
+  std::for_each(i2s.begin(), i2s.end(),[&](const std::string & element) { out << element << std::endl;});
+  logs(size() << " strings written");
+}
+/*
+int StrDB::lookup(const std::string &s,  int default_i) {
+
+	StringIntMap::const_iterator it = s2i.find(s);
+	if(it != s2i.end()) return it->second;
+    return default_i;
+}*/
+
+int StrDB::lookup(const std::string &s) {
+
+	StringIntMap::const_iterator it = s2i.find(s);
+	if(it != s2i.end()) return it->second;
+    return -1;
+}
+
+IntVec StrDB::lookup(const StringVec &svec) {
+  IntVec ivec(svec.size());
+  for_each(svec.begin(), svec.end(), [&](const std::string&s){
+    										ivec.push_back( insert_if_new(s));
+  	  	  	  	  	  	  	  	  	  	  });
+  return ivec;
+}
+
+ostream &operator<<(ostream &out, const StrDB &db) {
+  db.write(out);
+  return out;
+}
+
+///////
+
+
+void destroy_strings(StringVec &vec) {
   foridx(i, len(vec))
     delete [] vec[i];
 }
 
 void destroy_strings(StrStrMap &map) {
   typedef const char *const_char_ptr;
-  StrVec strs;
+  StringVec strs;
   formap(const_char_ptr, s, const_char_ptr, t, StrStrMap, map) {
     strs.push_back(s);
     strs.push_back(t);
   }
   destroy_strings(strs);
 }
-
-////////////////////////////////////////////////////////////
-
-int StrDB::read(istream &in, int N, bool one_way) {
-  char s[MAX_BUFFER_SIZE];
-  clear();
-  while(size() < N && in >> s) {
-    if(one_way) i2s.push_back(copy_str(s));
-    else (*this)[s];
-  }
-  logs(size() << " strings read");
-  return size();
-}
-
-int StrDB::read(const char *file, bool one_way) {
-  track("StrDB::read()", file << ", one_way=" << one_way, true);
-  ifstream in(file);
-  assert(in);
-  return read(in, INT_MAX, one_way);
-}
-
-void StrDB::write(ostream &out) {
-  foridx(i, size())
-    out << i2s[i] << endl;
-  logs(size() << " strings written");
-}
-
-void StrDB::write(const char *file) {
-  track("StrDB::write()", file, true);
-  ofstream out(file);
-  write(out);
-}
-
+/*
 const char *StrDB::operator[](int i) const {
   assert(i >= 0 && i < len(i2s));
   return i2s[i];
 }
 
+
 int StrDB::lookup(const char *s, bool incorp_new, int default_i) {
-  StrIntMap::const_iterator it = s2i.find(s);
+  StringIntMap::const_iterator it = s2i.find(s);
   if(it != s2i.end()) return it->second;
   if(incorp_new) {
     char *t = copy_str(s);
@@ -66,15 +119,9 @@ int StrDB::lookup(const char *s, bool incorp_new, int default_i) {
     return default_i;
 }
 
-IntVec StrDB::lookup(const StrVec &svec) {
-  IntVec ivec(len(svec));
-  foridx(i, len(svec))
-    ivec[i] = lookup(svec[i], true, -1);
-  return ivec;
-}
 
 int StrDB::operator[](const char *s) const {
-  StrIntMap::const_iterator it = s2i.find(s);
+  StringIntMap::const_iterator it = s2i.find(s);
   if(it != s2i.end()) return it->second;
   return -1;
 }
@@ -83,10 +130,7 @@ int StrDB::operator[](const char *s) {
   return lookup(s, true, -1);
 }
 
-ostream &operator<<(ostream &out, const StrDB &db) {
-  foridx(i, len(db)) out << db[i] << endl;
-  return out;
-}
+*/
 
 ////////////////////////////////////////////////////////////
 
@@ -156,19 +200,19 @@ void read_text(const char *file, int_func *func, StrDB &db, bool read_cached, bo
   if(read_cached) {
     // Read from strdb and int.
     assert(db.size() == 0); // db must be empty because we're going to clobber it all
-    db.read(strdb_file.c_str(), true);
+    db.read(strdb_file, true);
     track_block("", "Reading from " << int_file, false) {
       ifstream in(int_file.c_str());
-      char buf[MAX_BUFFER_SIZE];
+      std::string buf;
       while(true) {
-        in.read(buf, sizeof(buf));
+        in >> buf;
         if(in.gcount() == 0) break;
-        assert(in.gcount() % sizeof(int) == 0);
+        /*assert(in.gcount() % sizeof(int) == 0);
         for(int buf_i = 0; buf_i < in.gcount(); buf_i += 4) {
           int a = *((int *)(buf+buf_i));
           assert(a >= 0 && a < db.size());
           func(a);
-        }
+        }*/
       }
     }
   }
@@ -184,23 +228,15 @@ void read_text(const char *file, int_func *func, StrDB &db, bool read_cached, bo
       }
       if(write_cached) logs("Writing to " << int_file);
 
-      char s[MAX_BUFFER_SIZE];
-      char buf[MAX_BUFFER_SIZE]; int buf_i = 0; // Output buffer
+      std::string s;
       while(in >> s) { // Read a string
-        int a = db.lookup(s, incorp_new, -1);
+        int a = db.insert_if_new(std::move(s));
         if(func) func(a);
 
         if(write_cached) {
-          if(buf_i + sizeof(a) > sizeof(buf)) { // Flush buffer if full
-            out.write(buf, buf_i);
-            buf_i = 0;
-          }
-          *((int *)(buf+buf_i)) = a;
-          buf_i += sizeof(a);
+           out << a << std::endl;
         }
       }
-      if(write_cached) // Final flush
-        out.write(buf, buf_i);
     }
 
     if(write_cached && create_file(strdb_file.c_str()))

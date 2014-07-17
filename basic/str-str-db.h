@@ -13,7 +13,7 @@ public:
 
   int max_t_len;
 private:
-  StrStrMap s2t;
+  StringStringMap s2t;
 };
 
 #endif
