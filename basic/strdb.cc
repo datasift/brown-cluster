@@ -55,125 +55,25 @@ void StrDB::write(ostream &out) const {
   logs(size() << " strings written");
 }
 /*
-int StrDB::lookup(const std::string &s,  int default_i) {
-
-	StringIntMap::const_iterator it = s2i.find(s);
-	if(it != s2i.end()) return it->second;
-    return default_i;
-}*/
-
-int StrDB::lookup(const std::string &s) {
+ * \brief if string exist, return it's index, otherwise, return 1
+ *
+ */
+int StrDB::lookup(const std::string &s) const {
 
 	StringIntMap::const_iterator it = s2i.find(s);
 	if(it != s2i.end()) return it->second;
     return -1;
 }
 
-IntVec StrDB::lookup(const StringVec &svec) {
-  IntVec ivec(svec.size());
-  for_each(svec.begin(), svec.end(), [&](const std::string&s){
-    										ivec.push_back( insert_if_new(s));
-  	  	  	  	  	  	  	  	  	  	  });
-  return ivec;
-}
-
+/*
+ *  print out all found string
+ */
+/*
 ostream &operator<<(ostream &out, const StrDB &db) {
   db.write(out);
   return out;
 }
-
-///////
-
-
-void destroy_strings(StringVec &vec) {
-  foridx(i, len(vec))
-    delete [] vec[i];
-}
-
-void destroy_strings(StrStrMap &map) {
-  typedef const char *const_char_ptr;
-  StringVec strs;
-  formap(const_char_ptr, s, const_char_ptr, t, StrStrMap, map) {
-    strs.push_back(s);
-    strs.push_back(t);
-  }
-  destroy_strings(strs);
-}
-/*
-const char *StrDB::operator[](int i) const {
-  assert(i >= 0 && i < len(i2s));
-  return i2s[i];
-}
-
-
-int StrDB::lookup(const char *s, bool incorp_new, int default_i) {
-  StringIntMap::const_iterator it = s2i.find(s);
-  if(it != s2i.end()) return it->second;
-  if(incorp_new) {
-    char *t = copy_str(s);
-    int i = s2i[t] = len(i2s);
-    i2s.push_back(t);
-    return i;
-  }
-  else
-    return default_i;
-}
-
-
-int StrDB::operator[](const char *s) const {
-  StringIntMap::const_iterator it = s2i.find(s);
-  if(it != s2i.end()) return it->second;
-  return -1;
-}
-
-int StrDB::operator[](const char *s) {
-  return lookup(s, true, -1);
-}
-
 */
-
-////////////////////////////////////////////////////////////
-
-int IntPairIntDB::lookup(const IntPair &p, bool incorp_new, int default_i) {
-  IntPairIntMap::const_iterator it = p2i.find(p);
-  if(it != p2i.end()) return it->second;
-
-  if(incorp_new) {
-    int i = p2i[p] = len(i2p);
-    i2p.push_back(p);
-    return i;
-  }
-  else
-    return default_i;
-}
-
-int IntPairIntDB::read(istream &in, int N) {
-  assert(size() == 0);
-  int a, b;
-  while(size() < N && in >> a >> b)
-    (*this)[IntPair(a, b)];
-  return size();
-}
-
-void IntPairIntDB::write(ostream &out) {
-  forvec(_, const IntPair &, p, i2p)
-    out << p.first << ' ' << p.second << endl;
-}
-
-////////////////////////////////////////////////////////////
-
-int IntVecIntDB::lookup(const IntVec &v, bool incorp_new, int default_i) {
-  IntVecIntMap::const_iterator it = v2i.find(v);
-  if(it != v2i.end()) return it->second;
-
-  if(incorp_new) {
-    int i = v2i[v] = len(i2v);
-    i2v.push_back(v);
-    return i;
-  }
-  else
-    return default_i;
-}
 
 ////////////////////////////////////////////////////////////
 
@@ -184,7 +84,7 @@ int IntVecIntDB::lookup(const IntVec &v, bool incorp_new, int default_i) {
 // into integers (i.e., <file>.{strdb,int} exist), then use those.
 // If incorp_new is false, then words not in db will just get passed -1.
 typedef void int_func(int a);
-void read_text(const char *file, int_func *func, StrDB &db, bool read_cached, bool write_cached, bool incorp_new) {
+void read_text(const std::string &file, int_func *func, StrDB &db, bool read_cached, bool write_cached, bool incorp_new) {
   track("read_text()", file, true);
 
   string strdb_file = string(file)+".strdb";
@@ -194,8 +94,8 @@ void read_text(const char *file, int_func *func, StrDB &db, bool read_cached, bo
   // newer than the text file.
   read_cached &= file_exists(strdb_file.c_str()) &&
                  file_exists(int_file.c_str()) &&
-                 file_modified_time(strdb_file.c_str()) > file_modified_time(file) &&
-                 file_modified_time(int_file.c_str()) > file_modified_time(file);
+                 file_modified_time(strdb_file.c_str()) > file_modified_time(file.c_str()) &&
+                 file_modified_time(int_file.c_str()) > file_modified_time(file.c_str());
 
   if(read_cached) {
     // Read from strdb and int.
@@ -243,3 +143,54 @@ void read_text(const char *file, int_func *func, StrDB &db, bool read_cached, bo
       db.write(strdb_file.c_str());
   }
 }
+
+
+///////
+/*
+
+void destroy_strings(StringVec &vec) {
+  foridx(i, len(vec))
+    delete [] vec[i];
+}
+
+void destroy_strings(StrStrMap &map) {
+  typedef const char *const_char_ptr;
+  StringVec strs;
+  formap(const_char_ptr, s, const_char_ptr, t, StrStrMap, map) {
+    strs.push_back(s);
+    strs.push_back(t);
+  }
+  destroy_strings(strs);
+}
+
+const char *StrDB::operator[](int i) const {
+  assert(i >= 0 && i < len(i2s));
+  return i2s[i];
+}
+
+
+int StrDB::lookup(const char *s, bool incorp_new, int default_i) {
+  StringIntMap::const_iterator it = s2i.find(s);
+  if(it != s2i.end()) return it->second;
+  if(incorp_new) {
+    char *t = copy_str(s);
+    int i = s2i[t] = len(i2s);
+    i2s.push_back(t);
+    return i;
+  }
+  else
+    return default_i;
+}
+
+
+int StrDB::operator[](const char *s) const {
+  StringIntMap::const_iterator it = s2i.find(s);
+  if(it != s2i.end()) return it->second;
+  return -1;
+}
+
+int StrDB::operator[](const char *s) {
+  return lookup(s, true, -1);
+}
+
+*/

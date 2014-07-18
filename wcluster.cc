@@ -67,7 +67,7 @@ opt_define_bool(print_stats, "stats", false,               "Just print out stats
 opt_define_bool(paths2map,   "paths2map", false,           "Take the paths file and generate a map file.");
 
 #define use_restrict (!restrict_file.empty())
-const char *delim_str = "$#$";
+const std::string DELIM_STR = "$#$";
 
 typedef IntPair _;
 
@@ -325,9 +325,9 @@ void read_text_process_word(int w) {
 void read_text() {
   track("read_text()", "", false);
 
-  read_text(text_file.c_str(), read_text_process_word, db, !use_restrict, !use_restrict, !use_restrict);
+  read_text(text_file, read_text_process_word, db, !use_restrict, !use_restrict, !use_restrict);
   T = len(text);
-  delim_word = db.lookup(delim_str, false, -1);
+  delim_word = db.lookup(DELIM_STR);
   if(!paths2map) db.destroy_s2i(); // Conserve memory.
 
   // Count the phrases that we care about so we can map them all to integers.
@@ -968,7 +968,7 @@ void convert_paths_to_map() {
   forcmap(const string &, path, const StringVec &, words, SSVMap, map) {
     int a = -1;
     forvec(i, const string &, word, words) {
-      int b = word2phrase(db.lookup(word.c_str(), false, -1));
+      int b = word2phrase(db.lookup(word));
       if(b == -1) continue;
       if(a != -1) {
         // Record merge in the cluster tree
@@ -1000,7 +1000,7 @@ void convert_paths_to_map() {
   ofstream out(map_file.c_str());
   forcmap(const string &, path, const StringVec &, words, SSVMap, map) {
     forvec(_, const string &, word, words) {
-      int a = word2phrase(db.lookup(word.c_str(), false, -1));
+      int a = word2phrase(db.lookup(word));
       if(a == -1) continue;
 
       /*cout << a << ' ' << N << endl;

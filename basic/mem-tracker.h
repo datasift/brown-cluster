@@ -125,7 +125,7 @@ inline int mem_usage(const UnionSet &u) { // UnionSet
 inline int mem_usage(const StrDB &db) { // StrDB
   int mem = mem_usage(db.s2i) + mem_usage(db.i2s);
   foridx(i, len(db))
-    mem += (strlen(db[i])+1) * sizeof(char);
+    mem += db[i].capacity();
   return mem;
 }
 
